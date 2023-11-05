@@ -1,0 +1,51 @@
+"""https://leetcode.com/problems/permutations/
+Given an array nums of distinct integers, return all the possible permutations. You can return the answer in any order.
+"""
+
+from typing import List
+from collections import deque, defaultdict
+from itertools import count
+from heapq import heappush, heappop, heapify, heappushpop
+
+class Solution1:
+	""" Solution using dynamic programming with memoisation """
+	def permute(self, nums: List[int]) -> List[List[int]]:
+		memo = {}
+		nums = set(nums)
+
+		def recursivePermutations(nums):
+			nums_tuple = tuple(nums)
+			if nums_tuple in memo: return memo[nums_tuple]
+			if len(nums) == 1: return [[nums.pop()]]  # Base case, returned as 2d list bc this is what the final output should be 
+
+			permutations = []
+			for num in nums:
+				sub_permutations = recursivePermutations(nums - {num})
+				for subperm in sub_permutations: permutations.append([num] + subperm)
+			memo[nums_tuple] = permutations
+			return permutations
+		return recursivePermutations(nums)
+	
+class Solution:
+	""" Solution using backtracking - analogous to a DFS of the permutations tree. Similar to previous solution but goes forward. Adds directly to permutation so can't MEMOISE. """
+	def permute(self, nums: List[int]) -> List[List[int]]:
+		current = set()
+		ans = []
+
+		def backtrack():
+			if len(current) == len(nums):
+				ans.append(list(current))
+				return
+			
+			for num in nums:
+				if num not in current:
+					current.add(num)
+					backtrack()
+					current.remove(num)  # Use the same 'current' all the way through, so remove val
+		
+		backtrack()
+		return ans
+
+
+nums = [1, 2, 3]
+print(Solution().permute(nums))
