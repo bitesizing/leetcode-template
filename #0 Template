@@ -8,6 +8,6 @@ from itertools import count
 from heapq import heappush, heappop, heapify, heappushpop
 
 class Solution:
-	def function(self, ) -> :
-	
+    def function(self, ) -> :
+
 print(Solution().)
