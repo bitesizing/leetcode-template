@@ -12,4 +12,14 @@ from ..helpers import *
 
 {code_snippet}pass
 
+s = Solution()
+list_of_dicts 
+
+strings, true_ans = ["abbcccaa", "xy", "zzzzz"], [13, 2, 15]
+
+for i in range(len(true_ans)):
+    print(f"Example {i + 1}:")
+    ans = s.countHomogenous(strings[i])
+    print(f" s = {strings[i]}\n answer = {ans}\n true answer = {true_ans[i]}\n correct = {ans == true_ans[i]}\n")
+
 print(Solution().{function_name}())

@@ -1,9 +1,11 @@
 """ File to scrape a leetcode problem from a link and populate a template, with a given set of formatting rules. """
 
 # %%
+import os
 import re
 import json
 import requests
+from pprint import pprint
 from bs4 import BeautifulSoup as bs
 
 question_link = """
@@ -69,18 +71,35 @@ constraints_pattern =  r"(Constraints:.*)"
 constraints_onwards = re.search(constraints_pattern, text_content, re.DOTALL).group(1)
 constraints_onwards = re.sub(r'\n(\S+)', r'\n- \1', constraints_onwards)
 
+
 # Get the inputs, outputs and explanations
 input_line_pattern = r".*Input:.*"
 input_pattern = r"(\w+) = ((?:.*?)(?=\n|, \w+ =|$))"
 input_lines = re.findall(input_line_pattern, text_content)
-input = [re.findall(input_pattern, line) for line in input_lines]
+inputs = [re.findall(input_pattern, line) for line in input_lines]
 
 output_pattern = r"Output: (.*?)(?=\n|$)"
-output = re.findall(output_pattern, text_content)
+outputs = re.findall(output_pattern, text_content)
 
 explanation_pattern = r"Explanation: (.*?)(?=\n|$)"
 explanation = re.findall(explanation_pattern, text_content)
 
+def parse_examples(input_lists: list[list[tuple[str, str]]], output_lists: list[str]):
+    # Handle inputs
+    examples_dict = []
+    for input_list, output in zip(input_lists, output_lists):
+        examples_dict.append({'inputs': {}})
+        for name, val in input_list: examples_dict[-1]['inputs'][name] = eval(val)
+        examples_dict[-1]['output'] = eval(output)
+    return examples_dict
+
+pprint(parse_examples(inputs, outputs))
+    
+
+# Extract tags (NOT IMPLEMENTED YET)
+tags = []
+for tag_dict in r['topicTags']:
+    tags.append(tag_dict['slug'])
 
 # Get the filename
 question_number = r['questionFrontendId']
@@ -99,7 +118,8 @@ populated_file = template_string.format(
 )
 
 # Save file
-with open(filename, 'w') as file:
+parent_folder_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+with open(parent_folder_path + '/' + filename, 'w') as file:
     file.write(populated_file)
 
 
