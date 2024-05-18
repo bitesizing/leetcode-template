@@ -1,3 +1,3 @@
 
-from tests import run_tests
-from binary_trees import TreeNode
+from .helper_tests import run_tests
+from .binary_trees import *

@@ -1,9 +1,9 @@
 # %%
-from typing import List, Optional
+from typing import Optional, Union, get_args, get_origin
 from collections import deque, defaultdict
 from itertools import count
 from heapq import heappush, heappop, heapify, heappushpop
-from .helpers import *
+from helpers import *
 
 """ Distribute Coins in Binary Tree
 
@@ -33,9 +33,8 @@ class Solution:
 
 
 
-
 # Tests (ignore)
 examples_list = [{'inputs': {'root': [3, 0, 0]}, 'output': 2}, {'inputs': {'root': [0, 3, 0]}, 'output': 3}]
 run_tests(
     examples_list = examples_list,
-    function = Solution().distributeCoins)
+    func_in = Solution().distributeCoins)
