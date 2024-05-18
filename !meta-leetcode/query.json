@@ -1,0 +1,7 @@
+{
+    "operationName": "questionData",
+    "variables": {
+        "titleSlug": null
+        },
+    "query": null
+}
