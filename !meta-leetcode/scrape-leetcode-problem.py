@@ -6,6 +6,7 @@ import re
 import json
 import requests
 from pprint import pprint
+from jinja2 import Template
 from bs4 import BeautifulSoup as bs
 
 question_link = """
@@ -84,16 +85,16 @@ outputs = re.findall(output_pattern, text_content)
 explanation_pattern = r"Explanation: (.*?)(?=\n|$)"
 explanation = re.findall(explanation_pattern, text_content)
 
-def parse_examples(input_lists: list[list[tuple[str, str]]], output_lists: list[str]):
+def parse_examples(input_lists: list[list[tuple[str, str]]], output_lists: list[str]) -> list[dict]:
     # Handle inputs
-    examples_dict = []
+    examples_list = []
     for input_list, output in zip(input_lists, output_lists):
-        examples_dict.append({'inputs': {}})
-        for name, val in input_list: examples_dict[-1]['inputs'][name] = eval(val)
-        examples_dict[-1]['output'] = eval(output)
-    return examples_dict
+        examples_list.append({'inputs': {}})
+        for name, val in input_list: examples_list[-1]['inputs'][name] = eval(val)
+        examples_list[-1]['output'] = eval(output)
+    return examples_list
 
-pprint(parse_examples(inputs, outputs))
+examples_list = parse_examples(inputs, outputs)
     
 
 # Extract tags (NOT IMPLEMENTED YET)
@@ -109,12 +110,15 @@ filename = f'#{question_number}-{question_title_slug}.py'
 # Populate the template
 with open('template.txt', 'r') as file:
     template_string = file.read()
-populated_file = template_string.format(
+
+template = Template(template_string)
+populated_file = template.render(
     title = r['title'],
     description = initial_description,
     constraints = constraints_onwards,
     code_snippet=python_code_snippet,
-    function_name=function_name
+    function_name=function_name,
+    examples_list=examples_list,
 )
 
 # Save file

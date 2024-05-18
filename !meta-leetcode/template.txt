@@ -1,6 +1,6 @@
-""" {title}
+""" {{ title }}
 
-{description}{constraints}
+{{ description }}{{ constraints }}
 """
 
 from typing import List, Optional
@@ -10,16 +10,15 @@ from heapq import heappush, heappop, heapify, heappushpop
 
 from ..helpers import *
 
-{code_snippet}pass
+{{ code_snippet }}pass
 
 s = Solution()
-list_of_dicts 
+list_of_dicts
 
-strings, true_ans = ["abbcccaa", "xy", "zzzzz"], [13, 2, 15]
+examples_list = {{ examples_list }}
+for i in range(len(examples_list)):
+    example: dict = examples_list[i]
+    ans = s.{{ function_name }}(**example['inputs'])
 
-for i in range(len(true_ans)):
     print(f"Example {i + 1}:")
-    ans = s.countHomogenous(strings[i])
-    print(f" s = {strings[i]}\n answer = {ans}\n true answer = {true_ans[i]}\n correct = {ans == true_ans[i]}\n")
-
-print(Solution().{function_name}())
+    print(f"  inputs = {examples['inputs']}\n  answer = {ans}\n  true answer = {example['output']}\n  correct = {ans == example['output']}\n")
