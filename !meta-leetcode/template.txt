@@ -7,7 +7,9 @@ from .helpers import *
 
 """ {{ title }}
 
-{{ description }}{{ constraints }}
+Description:
+{{ description }}
+{{ constraints }}
 """
 
 # Code

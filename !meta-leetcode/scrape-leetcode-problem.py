@@ -67,11 +67,13 @@ text_content = soup.get_text()
 # Filter out the examples from the text
 description_pattern = r"^(.*?)Example"
 initial_description = re.search(description_pattern, text_content, re.DOTALL).group(1)
+initial_description = re.sub(r'^\s*\n', '', initial_description, flags=re.MULTILINE)
+print(initial_description)
 
 constraints_pattern =  r"(Constraints:.*)"
 constraints_onwards = re.search(constraints_pattern, text_content, re.DOTALL).group(1)
 constraints_onwards = re.sub(r'\n(\S+)', r'\n- \1', constraints_onwards)
-
+constraints_onwards = re.sub(r'^\s*\n', '', constraints_onwards, flags=re.MULTILINE)
 
 # Get the inputs, outputs and explanations
 input_line_pattern = r".*Input:.*"
