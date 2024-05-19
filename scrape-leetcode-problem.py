@@ -14,12 +14,13 @@ from bs4 import BeautifulSoup as bs
 with open('config.toml', 'r') as file:
     configs = toml.loads(file.read())
 question_link, output_folder, templates_folder = configs['question_link'], configs['output_folder'], configs['templates_folder']
+base_link = "https://leetcode.com/problems/"
 
 
 """ CODE. """
 # 1. Extract link
 def extract_question_title(link: str) -> str:
-    re_search = 'https://leetcode\\.com/problems/(.*?)/.*'
+    re_search = base_link + '(.*?)/.*'
     match = re.search(re_search, link)
     if not match: raise ValueError('No match:(')
     return match.group(1)
@@ -116,6 +117,7 @@ with open(templates_folder + '/template.txt', 'r') as file:
 
 template = Template(template_string)
 populated_file = template.render(
+    link = base_link + question_title_slug + '/',
     title = r['title'],
     description = initial_description,
     constraints = constraints_onwards,
