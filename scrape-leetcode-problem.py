@@ -19,7 +19,7 @@ question_link, output_folder, templates_folder = configs['question_link'], confi
 """ CODE. """
 # 1. Extract link
 def extract_question_title(link: str) -> str:
-    re_search = 'https://leetcode\\.com/problems/(.*)/.*'
+    re_search = 'https://leetcode\\.com/problems/(.*?)/.*'
     match = re.search(re_search, link)
     if not match: raise ValueError('No match:(')
     return match.group(1)
@@ -125,7 +125,8 @@ populated_file = template.render(
 )
 
 # Save file
-with open(output_folder + '/' + filename, 'w') as file:
+filepath = output_folder + '/' + filename if output_folder else filename
+with open(filepath, 'w') as file:
     file.write(populated_file)
 
 
