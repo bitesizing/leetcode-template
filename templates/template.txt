@@ -3,7 +3,12 @@ from typing import Optional, Union, get_args, get_origin, List
 from collections import deque, defaultdict
 from itertools import count
 from heapq import heappush, heappop, heapify, heappushpop
-from helpers import *
+
+# Only way to import all from a module with a dash://
+import importlib
+helpers = importlib.import_module("leetcode-template.helpers")
+names = [x for x in helpers.__dict__ if not x.startswith("_")]
+globals().update({k: getattr(helpers, k) for k in names})
 
 """ {{ link }}
 {{ title }}
