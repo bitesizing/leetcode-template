@@ -1,0 +1,8 @@
+# LINK TO GITHUB QUESTION YOU WANT TO SCRAPE
+question_link = """
+https://leetcode.com/problems/two-sum/
+"""
+
+
+output_folder = ""  # Leave blank to save to root
+templates_folder = "templates"

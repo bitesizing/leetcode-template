@@ -4,21 +4,22 @@
 import os
 import re
 import json
+import toml
 import requests
 from pprint import pprint
 from jinja2 import Template
 from bs4 import BeautifulSoup as bs
 
-question_link = """
-https://leetcode.com/problems/distribute-coins-in-binary-tree/description/?envType=daily-question&envId=2024-05-18
-"""
-templates_folder = 'templates'
-output_folder = r'C:\\Users\\hk23402\\Desktop\\Git_projects\\leetcode-template'
+# Import configs from .toml file as dictionary
+with open('config.toml', 'r') as file:
+    configs = toml.loads(file.read())
+question_link, output_folder, templates_folder = configs['question_link'], configs['output_folder'], configs['templates_folder']
+
 
 """ CODE. """
 # 1. Extract link
 def extract_question_title(link: str) -> str:
-    re_search = 'https://leetcode\\.com/problems/(.*)/description/.*'
+    re_search = 'https://leetcode\\.com/problems/(.*)/.*'
     match = re.search(re_search, link)
     if not match: raise ValueError('No match:(')
     return match.group(1)

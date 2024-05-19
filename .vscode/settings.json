@@ -1,8 +1,0 @@
-{
-  "files.exclude": {
-    ".gitignore": true,
-    ".vscode": true,
-    ".git": true,
-    ".venv": true
-  }
-}
