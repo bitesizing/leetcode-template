@@ -23,4 +23,4 @@ Description:
 examples_list = {{ examples_list }}
 run_tests(
     examples_list = examples_list,
-    function = Solution().{{ function_name }})
+    func_in = Solution().{{ function_name }})

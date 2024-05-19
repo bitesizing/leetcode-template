@@ -6,9 +6,15 @@ import re
 import json
 import toml
 import requests
+import unicodedata
 from pprint import pprint
 from jinja2 import Template
 from bs4 import BeautifulSoup as bs
+
+# Set current working directory to directory of the script... (helps with running from parent directory)
+if __name__ == "__main__":
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    os.chdir(script_dir)
 
 # Import configs from .toml file as dictionary
 with open('config.toml', 'r') as file:
@@ -65,7 +71,7 @@ function_name = re.search('.*def (.*)\\(', function_line).group(1)
 # Get the description in just text
 description = r['content']
 soup = bs(description, 'html.parser')
-text_content = soup.get_text()
+text_content = re.sub(r'\xa0', ' ', soup.get_text())  # remove non-breaking spaces, get text content
 
 # Filter out the examples from the text
 description_pattern = r"^(.*?)Example"
