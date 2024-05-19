@@ -12,7 +12,8 @@ from bs4 import BeautifulSoup as bs
 question_link = """
 https://leetcode.com/problems/distribute-coins-in-binary-tree/description/?envType=daily-question&envId=2024-05-18
 """
-
+templates_folder = 'templates'
+output_folder = r'C:\\Users\\hk23402\\Desktop\\Git_projects\\leetcode-template'
 
 """ CODE. """
 # 1. Extract link
@@ -26,11 +27,11 @@ question_title = extract_question_title(question_link)
 
 # 2. Write the request:)
 # Get the .json query by importing - template for request
-with open('query.json', 'r') as file:
+with open(templates_folder + '/query.json', 'r') as file:
     json_request = json.load(file)
 
 # Get the graphql query - i.e., what information are we going to request
-with open('problem-data.graphql', 'r') as file:
+with open(templates_folder + '/problem-data.graphql', 'r') as file:
     graphql_query  = file.read()
 
 # Populate the .json query
@@ -68,7 +69,6 @@ text_content = soup.get_text()
 description_pattern = r"^(.*?)Example"
 initial_description = re.search(description_pattern, text_content, re.DOTALL).group(1)
 initial_description = re.sub(r'^\s*\n', '', initial_description, flags=re.MULTILINE)
-print(initial_description)
 
 constraints_pattern =  r"(Constraints:.*)"
 constraints_onwards = re.search(constraints_pattern, text_content, re.DOTALL).group(1)
@@ -110,7 +110,7 @@ question_title_slug = r['titleSlug']
 filename = f'#{question_number}-{question_title_slug}.py'
 
 # Populate the template
-with open('template.txt', 'r') as file:
+with open(templates_folder + '/template.txt', 'r') as file:
     template_string = file.read()
 
 template = Template(template_string)
@@ -124,13 +124,9 @@ populated_file = template.render(
 )
 
 # Save file
-parent_folder_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-with open(parent_folder_path + '/' + filename, 'w') as file:
+with open(output_folder + '/' + filename, 'w') as file:
     file.write(populated_file)
 
-
-
-# %%
 
 def write_pretty_json(r: dict) -> str:
     prettified_data = json.dumps(r, indent=4)
