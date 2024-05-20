@@ -38,20 +38,22 @@ python_template_filename: str = "python_template.txt"
 
 """ CODE. """
 # 1. Make post request for data
-json_variables = {}  # Only needed if searching for question title
-# If question link is empty, then automatically get the daily question
+
+# If daily question, we need to get the title_slug via an additional post request
 if is_daily:
-    query_filepath = join_url(templates_folderpath, daily_query_filename)
+    daily_query_filepath = join_url(templates_folderpath, daily_query_filename)
+    r = make_post_request_from_query(graphql_url, daily_query_filepath)
+    title_slug = r['data']['activeDailyCodingChallengeQuestion']['question']['titleSlug']
 
-# Else extract question name from given url and search for it
+# Otherwise we can extract the slug directly from the provided url
 else: 
-    query_filepath = join_url(templates_folderpath, problem_query_filename)
-    json_variables['titleSlug'] = extract_question_title(base_leetcode_url, question_link)
+    title_slug = extract_question_title(base_leetcode_url, question_link)
 
+# Now we make the post request for the question with our chosen slug
+json_variables = {'titleSlug': title_slug}
+query_filepath = join_url(templates_folderpath, problem_query_filename)
 r = make_post_request_from_query(graphql_url, query_filepath, json_variables)
-if is_daily: data = r['data']['activeDailyCodingChallengeQuestion']['question']
-else: data = r['data']['question']
-
+data = r['data']['question']
 
 # 2. Extract code
 code_snippets = data['codeSnippets']
@@ -62,7 +64,6 @@ python_code_snippet: str = python_snippet.get('code')
 # Pull out the name of the function
 function_line = python_code_snippet.splitlines()[-2]
 function_name = re.search('.*def (.*)\\(', function_line).group(1)
-
 
 # Get the description in just text
 description = data['content']
