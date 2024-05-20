@@ -2,15 +2,14 @@
 
 # %%
 import os
-from os.path import join as join_url
 import re
 import json
 import toml
-import requests
-import unicodedata
+
 from pprint import pprint
 from jinja2 import Template
 from bs4 import BeautifulSoup as bs
+from os.path import join as join_url
 
 from helpers import extract_question_title, make_post_request_from_query, query_list_of_dicts
 
@@ -33,7 +32,6 @@ templates_folderpath: str = "templates"
 daily_query_filename: str = "daily-question.graphql"
 problem_query_filename: str = "problem-data.graphql"
 python_template_filename: str = "python_template.txt"
-
 
 
 """ CODE. """
