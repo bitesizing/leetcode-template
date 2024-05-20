@@ -24,34 +24,46 @@ base_link = "https://leetcode.com/problems/"
 
 
 """ CODE. """
-# 1. Extract link
+# 1. Import the basic json request
+# Get the .json query by importing - template for request
+
+
+
+# 2. Extract link
 def extract_question_title(link: str) -> str:
     re_search = base_link + '(.*?)/.*'
     match = re.search(re_search, link)
     if not match: raise ValueError('No match:(')
     return match.group(1)
-question_title = extract_question_title(question_link)
 
+# If question link is empty, get the daily question
+if question_link == "":
+    with open(templates_folder + '/daily-question.graphql', 'r') as file:
+        graphql_query  = file.read()
 
-# 2. Write the request:)
-# Get the .json query by importing - template for request
-with open(templates_folder + '/query.json', 'r') as file:
-    json_request = json.load(file)
+    json_request = {'query': graphql_query}
 
-# Get the graphql query - i.e., what information are we going to request
-with open(templates_folder + '/problem-data.graphql', 'r') as file:
-    graphql_query  = file.read()
+# Else read link from question link and use existing .json template
+else:
+    with open(templates_folder + '/query.json', 'r') as file:
+        json_request = json.load(file)
+    json_request['variables']['titleSlug'] = extract_question_title(question_link)
 
-# Populate the .json query
-json_request['query'] = graphql_query
-json_request['variables']['titleSlug'] = question_title
+    # Get the graphql query - i.e., what information are we going to request
+    with open(templates_folder + '/problem-data.graphql', 'r') as file:
+        graphql_query  = file.read()
+json_request['query'] = graphql_query  # populate the query
+
+headers = {
+    "Content-Type": "application/json"
+}
 
 
 # 3. Make the request
-r = requests.post('https://leetcode.com/graphql', json = json_request).json()['data']['question']
+r = requests.post('https://leetcode.com/graphql', headers=headers, json = json_request)
+r = r.json()['data']['question']
 
 # 4. Extract data
-
 # Get the code snippet 
 def query_list_of_dicts(list_of_dicts: list[dict], key: str, value) -> dict:
     """ Returns the dictionary matching a key value pair in a given list of dictionaries. Returns empty dictionary if no match found. """
