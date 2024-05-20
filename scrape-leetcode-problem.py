@@ -53,7 +53,7 @@ else: data = r['data']['question']
 
 
 # 2. Extract code
-code_snippets = r['codeSnippets']
+code_snippets = data['codeSnippets']
 python_snippet = query_list_of_dicts(code_snippets, 'langSlug', 'python3')
 if python_snippet.get('code') is None: raise ValueError('No match:(')
 python_code_snippet: str = python_snippet.get('code')
@@ -64,7 +64,7 @@ function_name = re.search('.*def (.*)\\(', function_line).group(1)
 
 
 # Get the description in just text
-description = r['content']
+description = data['content']
 soup = bs(description, 'html.parser')
 text_content = re.sub(r'\xa0', ' ', soup.get_text())  # remove non-breaking spaces, get text content
 
@@ -104,12 +104,12 @@ examples_list = parse_examples(inputs, outputs)
 
 # Extract tags (NOT IMPLEMENTED YET)
 tags = []
-for tag_dict in r['topicTags']:
+for tag_dict in data['topicTags']:
     tags.append(tag_dict['slug'])
 
 # Get the filename
-question_number = r['questionFrontendId']
-question_title_slug = r['titleSlug']
+question_number = data['questionFrontendId']
+question_title_slug = data['titleSlug']
 filename = f'#{question_number}-{question_title_slug}.py'
 
 # Populate the template
@@ -119,7 +119,7 @@ with open(templates_folder + '/template.txt', 'r') as file:
 template = Template(template_string)
 populated_file = template.render(
     link = base_leetcode_url + question_title_slug + '/',
-    title = r['title'],
+    title = data['title'],
     description = initial_description,
     constraints = constraints_onwards,
     code_snippet=python_code_snippet,
