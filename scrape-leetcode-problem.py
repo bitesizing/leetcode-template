@@ -2,6 +2,7 @@
 
 # %%
 import os
+from os.path import join as join_url
 import re
 import json
 import toml
@@ -11,64 +12,55 @@ from pprint import pprint
 from jinja2 import Template
 from bs4 import BeautifulSoup as bs
 
+from helpers import extract_question_title, make_post_request_from_query
+
 # Set current working directory to directory of the script... (helps with running from parent directory)
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.realpath(__file__))
     os.chdir(script_dir)
 
-# Import configs from .toml file as dictionary
+# Initialise variables, including reading from config
 with open('config.toml', 'r') as file:
     configs = toml.loads(file.read())
-question_link, output_folder, templates_folder = configs['question_link'], configs['output_folder'], configs['templates_folder']
-base_link = "https://leetcode.com/problems/"
+question_link: str = configs['question_link']
+output_folder: str = configs['output_folder']
+is_daily: bool = (question_link.strip() == "")  # get daily if q. link is empty
+
+# Filepath variables
+base_leetcode_url: str = "https://leetcode.com/problems/"
+graphql_url: str = "https://leetcode.com/graphql"
+templates_folderpath: str = "templates"
+daily_query_filename: str = "daily-question.graphql"
+problem_query_filename: str = "problem-data.graphql"
+
 
 
 """ CODE. """
-# 1. Import the basic json request
-# Get the .json query by importing - template for request
+# 1. Make post request for data
+json_variables = {}  # Only needed if searching for question title
+# If question link is empty, then automatically get the daily question
+if is_daily:
+    query_filepath = join_url(templates_folderpath, daily_query_filename)
+
+# Else extract question name from given url and search for it
+else: 
+    query_filepath = join_url(templates_folderpath, problem_query_filename)
+    json_variables['titleSlug'] = extract_question_title(base_leetcode_url, question_link)
+
+r = make_post_request_from_query(graphql_url, query_filepath, json_variables)
+if is_daily: data = r['data']['activeDailyCodingChallengeQuestion']['question']
+else: data = r['data']['question']
 
 
 
-# 2. Extract link
-def extract_question_title(link: str) -> str:
-    re_search = base_link + '(.*?)/.*'
-    match = re.search(re_search, link)
-    if not match: raise ValueError('No match:(')
-    return match.group(1)
-
-# If question link is empty, get the daily question
-if question_link == "":
-    with open(templates_folder + '/daily-question.graphql', 'r') as file:
-        graphql_query  = file.read()
-
-    json_request = {'query': graphql_query}
-
-# Else read link from question link and use existing .json template
-else:
-    with open(templates_folder + '/query.json', 'r') as file:
-        json_request = json.load(file)
-    json_request['variables']['titleSlug'] = extract_question_title(question_link)
-
-    # Get the graphql query - i.e., what information are we going to request
-    with open(templates_folder + '/problem-data.graphql', 'r') as file:
-        graphql_query  = file.read()
-json_request['query'] = graphql_query  # populate the query
-
-headers = {
-    "Content-Type": "application/json"
-}
-
-
+# %%
 # 3. Make the request
 r = requests.post('https://leetcode.com/graphql', headers=headers, json = json_request)
 r = r.json()['data']['question']
 
 # 4. Extract data
 # Get the code snippet 
-def query_list_of_dicts(list_of_dicts: list[dict], key: str, value) -> dict:
-    """ Returns the dictionary matching a key value pair in a given list of dictionaries. Returns empty dictionary if no match found. """
-    for d in list_of_dicts:
-        if d.get(key) == value: return d
+
 
 code_snippets = r['codeSnippets']
 python_snippet = query_list_of_dicts(code_snippets, 'langSlug', 'python3')
@@ -135,7 +127,7 @@ with open(templates_folder + '/template.txt', 'r') as file:
 
 template = Template(template_string)
 populated_file = template.render(
-    link = base_link + question_title_slug + '/',
+    link = base_leetcode_url + question_title_slug + '/',
     title = r['title'],
     description = initial_description,
     constraints = constraints_onwards,
