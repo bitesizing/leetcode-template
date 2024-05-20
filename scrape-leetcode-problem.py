@@ -12,7 +12,7 @@ from pprint import pprint
 from jinja2 import Template
 from bs4 import BeautifulSoup as bs
 
-from helpers import extract_question_title, make_post_request_from_query
+from helpers import extract_question_title, make_post_request_from_query, query_list_of_dicts
 
 # Set current working directory to directory of the script... (helps with running from parent directory)
 if __name__ == "__main__":
@@ -52,16 +52,7 @@ if is_daily: data = r['data']['activeDailyCodingChallengeQuestion']['question']
 else: data = r['data']['question']
 
 
-
-# %%
-# 3. Make the request
-r = requests.post('https://leetcode.com/graphql', headers=headers, json = json_request)
-r = r.json()['data']['question']
-
-# 4. Extract data
-# Get the code snippet 
-
-
+# 2. Extract code
 code_snippets = r['codeSnippets']
 python_snippet = query_list_of_dicts(code_snippets, 'langSlug', 'python3')
 if python_snippet.get('code') is None: raise ValueError('No match:(')
