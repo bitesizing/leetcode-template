@@ -32,6 +32,7 @@ graphql_url: str = "https://leetcode.com/graphql"
 templates_folderpath: str = "templates"
 daily_query_filename: str = "daily-question.graphql"
 problem_query_filename: str = "problem-data.graphql"
+python_template_filename: str = "python_template.txt"
 
 
 
@@ -100,7 +101,6 @@ def parse_examples(input_lists: list[list[tuple[str, str]]], output_lists: list[
     return examples_list
 
 examples_list = parse_examples(inputs, outputs)
-    
 
 # Extract tags (NOT IMPLEMENTED YET)
 tags = []
@@ -110,10 +110,10 @@ for tag_dict in data['topicTags']:
 # Get the filename
 question_number = data['questionFrontendId']
 question_title_slug = data['titleSlug']
-filename = f'#{question_number}-{question_title_slug}.py'
+output_filename = f'#{question_number}-{question_title_slug}.py'
 
 # Populate the template
-with open(templates_folder + '/template.txt', 'r') as file:
+with open(join_url(templates_folderpath, python_template_filename), 'r') as file:
     template_string = file.read()
 
 template = Template(template_string)
@@ -128,8 +128,7 @@ populated_file = template.render(
 )
 
 # Save file
-filepath = output_folder + '/' + filename if output_folder else filename
-with open(filepath, 'w') as file:
+with open(join_url(output_folder, output_filename), 'w') as file:
     file.write(populated_file)
 
 
