@@ -95,44 +95,45 @@ def generate_template_from_leetcode_data(data: dict, language: str = 'python3') 
 
         return code_snippet, function_name
 
+    def process_description_text(data: dict) -> tuple[str, str, list[dict]]:
+        def generate_examples_list(input_lists: list[list[tuple[str, str]]], output_lists: list[str]) -> list[dict]:
+            # Handle inputs
+            examples_list = []
+            for input_list, output in zip(input_lists, output_lists):
+                examples_list.append({'inputs': {}})
+                for name, val in input_list: examples_list[-1]['inputs'][name] = eval(val)
+                examples_list[-1]['output'] = eval(output)
+            return examples_list
+        
+        # Get description content by parsing html within data dict, then filter out non-breaking spaces.
+        full_desc_text = re.sub(r'\xa0', ' ', bs(data['content'], 'html.parser').get_text())
+
+        # Get the introduction and constraints.
+        introduction_text = re.search(r"^(.*?)Example", full_desc_text, re.DOTALL).group(1)
+        introduction_text = re.sub(r'^\s*\n', '', introduction_text, flags=re.MULTILINE)
+
+        constraints_text = re.search(r"(Constraints:.*)", full_desc_text, re.DOTALL).group(1)
+        constraints_text = re.sub(r'\n(\S+)', r'\n- \1', constraints_text)
+        constraints_text = re.sub(r'^\s*\n', '', constraints_text, flags=re.MULTILINE)
+
+        # Get the inputs, outputs and explanations
+        input_line_pattern = r".*Input:.*"
+        input_pattern = r"(\w+) = ((?:.*?)(?=\n|, \w+ =|$))"
+        input_lines = re.findall(input_line_pattern, full_desc_text)
+        inputs = [re.findall(input_pattern, line) for line in input_lines]
+
+        output_pattern = r"Output: (.*?)(?=\n|$)"
+        outputs = re.findall(output_pattern, full_desc_text)
+        examples_list = generate_examples_list(inputs, outputs)
+
+        explanation_pattern = r"Explanation: (.*?)(?=\n|$)"
+        explanation = re.findall(explanation_pattern, full_desc_text)
+
+        return introduction_text, constraints_text, examples_list
+
     # Get the description in just text
     code_snippet, function_name = get_code_snippet_data(data, language)
-    description = data['content']
-    soup = bs(description, 'html.parser')
-    text_content = re.sub(r'\xa0', ' ', soup.get_text())  # remove non-breaking spaces, get text content
-
-    # Filter out the examples from the text
-    description_pattern = r"^(.*?)Example"
-    initial_description = re.search(description_pattern, text_content, re.DOTALL).group(1)
-    initial_description = re.sub(r'^\s*\n', '', initial_description, flags=re.MULTILINE)
-
-    constraints_pattern =  r"(Constraints:.*)"
-    constraints_onwards = re.search(constraints_pattern, text_content, re.DOTALL).group(1)
-    constraints_onwards = re.sub(r'\n(\S+)', r'\n- \1', constraints_onwards)
-    constraints_onwards = re.sub(r'^\s*\n', '', constraints_onwards, flags=re.MULTILINE)
-
-    # Get the inputs, outputs and explanations
-    input_line_pattern = r".*Input:.*"
-    input_pattern = r"(\w+) = ((?:.*?)(?=\n|, \w+ =|$))"
-    input_lines = re.findall(input_line_pattern, text_content)
-    inputs = [re.findall(input_pattern, line) for line in input_lines]
-
-    output_pattern = r"Output: (.*?)(?=\n|$)"
-    outputs = re.findall(output_pattern, text_content)
-
-    explanation_pattern = r"Explanation: (.*?)(?=\n|$)"
-    explanation = re.findall(explanation_pattern, text_content)
-
-    def parse_examples(input_lists: list[list[tuple[str, str]]], output_lists: list[str]) -> list[dict]:
-        # Handle inputs
-        examples_list = []
-        for input_list, output in zip(input_lists, output_lists):
-            examples_list.append({'inputs': {}})
-            for name, val in input_list: examples_list[-1]['inputs'][name] = eval(val)
-            examples_list[-1]['output'] = eval(output)
-        return examples_list
-
-    examples_list = parse_examples(inputs, outputs)
+    introduction_text, constraints_text, examples_list = process_description_text(data)
 
     # Extract tags (NOT IMPLEMENTED YET)
     tags = []
@@ -146,14 +147,13 @@ def generate_template_from_leetcode_data(data: dict, language: str = 'python3') 
 
     # Populate the template
     with open(join_url(templates_folderpath, python_template_filename), 'r') as file:
-        template_string = file.read()
-
-    template = Template(template_string)
+        template = Template(file.read())
+    
     populated_file = template.render(
         link = base_leetcode_url + question_title_slug + '/',
         title = data['title'],
-        description = initial_description,
-        constraints = constraints_onwards,
+        description = introduction_text,
+        constraints = constraints_text,
         code_snippet = code_snippet,
         function_name = function_name,
         examples_list = examples_list,
