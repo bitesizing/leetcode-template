@@ -115,7 +115,7 @@ def generate_problem_file_from_leetcode_data(data: dict, language: str = 'python
 
     # Get the filename
     question_title_slug = data['titleSlug']
-    output_filename = f'#{data['questionFrontendId']}-{question_title_slug}.py'
+    output_filename = f"#{data['questionFrontendId']}-{question_title_slug}.py"
 
     # Generate variables to populate template with
     template_variables = {
