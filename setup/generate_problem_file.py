@@ -4,7 +4,7 @@ import json
 from pprint import pprint
 from jinja2 import Template
 from bs4 import BeautifulSoup as bs
-from os.path import join as join_url
+from os.path import join as join_path
 
 from helpers import query_list_of_dicts
 import constants as c
@@ -126,11 +126,11 @@ def generate_problem_file_from_leetcode_data(data: dict, language: str = 'python
     template_variables.update(get_code_snippet_data(data, language))
 
     # Read and populate the template
-    with open(join_url(c.templates_folderpath, c.python_template_filename), 'r') as file:
+    with open(join_path(c.templates_folderpath, c.python_template_filename), 'r') as file:
         template = Template(file.read())
     populated_file = template.render(**template_variables)
 
     # Save file
-    with open(join_url(c.output_folder, output_filename), 'w') as file:
+    with open(join_path(c.output_folder, output_filename), 'w') as file:
         file.write(populated_file)
         pprint('Wrote correctly!')
