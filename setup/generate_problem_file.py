@@ -18,9 +18,9 @@ languages = {
     }
 }
 
-def generate_problem_file_from_leetcode_data(data: dict, language: str = 'python3') -> str:
+def generate_problem_file_from_leetcode_data(data: dict, language: str = 'python3') -> dict:
 
-    def get_code_snippet_data(data: dict, language: str) -> tuple[str, str]:
+    def get_code_snippet_data(data: dict, language: str) -> dict:
         """
         Get code snippet and function name from leetcode data for a given language.
 
@@ -47,7 +47,7 @@ def generate_problem_file_from_leetcode_data(data: dict, language: str = 'python
         if match is None: raise ValueError(f'Could not get function name from provided code snippet.')
         function_name = match.group(1)
 
-        return code_snippet, function_name
+        return {'code_snippet': code_snippet, 'function_name': function_name}
 
     def process_description_text(data: dict) -> tuple[str, str, list[dict]]:
         """
@@ -111,35 +111,24 @@ def generate_problem_file_from_leetcode_data(data: dict, language: str = 'python
         explanation_pattern = r"Explanation: (.*?)(?=\n|$)"
         explanation = re.findall(explanation_pattern, full_desc_text)
 
-        return introduction_text, constraints_text, examples_list
-
-    # Get the description in just text
-    code_snippet, function_name = get_code_snippet_data(data, language)
-    introduction_text, constraints_text, examples_list = process_description_text(data)
-
-    # Extract tags (NOT IMPLEMENTED YET)
-    tags = []
-    for tag_dict in data['topicTags']:
-        tags.append(tag_dict['slug'])
+        return {'introduction_text': introduction_text, 'constraints_text': constraints_text, 'examples_list': examples_list}
 
     # Get the filename
-    question_number = data['questionFrontendId']
     question_title_slug = data['titleSlug']
-    output_filename = f'#{question_number}-{question_title_slug}.py'
+    output_filename = f'#{data['questionFrontendId']}-{question_title_slug}.py'
 
-    # Populate the template
+    # Generate variables to populate template with
+    template_variables = {
+        'link': c.base_leetcode_url + question_title_slug + '/',
+        'title': data['title'],
+    }
+    template_variables.update(process_description_text(data))
+    template_variables.update(get_code_snippet_data(data, language))
+
+    # Read and populate the template
     with open(join_url(c.templates_folderpath, c.python_template_filename), 'r') as file:
         template = Template(file.read())
-    
-    populated_file = template.render(
-        link = c.base_leetcode_url + question_title_slug + '/',
-        title = data['title'],
-        description = introduction_text,
-        constraints = constraints_text,
-        code_snippet = code_snippet,
-        function_name = function_name,
-        examples_list = examples_list,
-    )
+    populated_file = template.render(**template_variables)
 
     # Save file
     with open(join_url(c.output_folder, output_filename), 'w') as file:
