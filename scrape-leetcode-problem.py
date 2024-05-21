@@ -53,83 +53,102 @@ query_filepath = join_url(templates_folderpath, problem_query_filename)
 r = make_post_request_from_query(graphql_url, query_filepath, json_variables)
 data = r['data']['question']
 
+
+# TODO: turn this into custom class instead of dict**2. Import properly from helpers
+# I can pull some custom classes in from my project code to help with this.
+languages = {
+    'python3': {
+        'function_line': 1,
+        'function_pattern': '.*def (.*)\\(',
+    }
+}
+
 # 2. Extract code
-code_snippets = data['codeSnippets']
-python_snippet = query_list_of_dicts(code_snippets, 'langSlug', 'python3')
-if python_snippet.get('code') is None: raise ValueError('No match:(')
-python_code_snippet: str = python_snippet.get('code')
+def generate_template_from_leetcode_data(data: dict, language: str = 'python3') -> str:
 
-# Pull out the name of the function
-function_line = python_code_snippet.splitlines()[-2]
-function_name = re.search('.*def (.*)\\(', function_line).group(1)
+    def get_code_snippet_data(data: dict, language: str) -> tuple[str, str]:
+        # Get code snippet by querying list of dictionaries for key value pair
+        code_snippet: str = query_list_of_dicts(data['codeSnippets'], key='langSlug', value=language).get('code')
+        if code_snippet is None: raise ValueError(f'Could not get code snippet for language "{language}."')
 
-# Get the description in just text
-description = data['content']
-soup = bs(description, 'html.parser')
-text_content = re.sub(r'\xa0', ' ', soup.get_text())  # remove non-breaking spaces, get text content
+        # Obtain function name
+        language_dict: dict = languages[language]  # TEST IF THIS WORKS
+        match: re.Match = re.search(language_dict['function_pattern'], code_snippet.splitlines()[language_dict['function_line']])
+        if match is None: raise ValueError(f'Could not get function name from provided code snippet.')
+        function_name = match.group(1)
 
-# Filter out the examples from the text
-description_pattern = r"^(.*?)Example"
-initial_description = re.search(description_pattern, text_content, re.DOTALL).group(1)
-initial_description = re.sub(r'^\s*\n', '', initial_description, flags=re.MULTILINE)
+        return code_snippet, function_name
 
-constraints_pattern =  r"(Constraints:.*)"
-constraints_onwards = re.search(constraints_pattern, text_content, re.DOTALL).group(1)
-constraints_onwards = re.sub(r'\n(\S+)', r'\n- \1', constraints_onwards)
-constraints_onwards = re.sub(r'^\s*\n', '', constraints_onwards, flags=re.MULTILINE)
+    # Get the description in just text
+    code_snippet, function_name = get_code_snippet_data(data, language)
+    description = data['content']
+    soup = bs(description, 'html.parser')
+    text_content = re.sub(r'\xa0', ' ', soup.get_text())  # remove non-breaking spaces, get text content
 
-# Get the inputs, outputs and explanations
-input_line_pattern = r".*Input:.*"
-input_pattern = r"(\w+) = ((?:.*?)(?=\n|, \w+ =|$))"
-input_lines = re.findall(input_line_pattern, text_content)
-inputs = [re.findall(input_pattern, line) for line in input_lines]
+    # Filter out the examples from the text
+    description_pattern = r"^(.*?)Example"
+    initial_description = re.search(description_pattern, text_content, re.DOTALL).group(1)
+    initial_description = re.sub(r'^\s*\n', '', initial_description, flags=re.MULTILINE)
 
-output_pattern = r"Output: (.*?)(?=\n|$)"
-outputs = re.findall(output_pattern, text_content)
+    constraints_pattern =  r"(Constraints:.*)"
+    constraints_onwards = re.search(constraints_pattern, text_content, re.DOTALL).group(1)
+    constraints_onwards = re.sub(r'\n(\S+)', r'\n- \1', constraints_onwards)
+    constraints_onwards = re.sub(r'^\s*\n', '', constraints_onwards, flags=re.MULTILINE)
 
-explanation_pattern = r"Explanation: (.*?)(?=\n|$)"
-explanation = re.findall(explanation_pattern, text_content)
+    # Get the inputs, outputs and explanations
+    input_line_pattern = r".*Input:.*"
+    input_pattern = r"(\w+) = ((?:.*?)(?=\n|, \w+ =|$))"
+    input_lines = re.findall(input_line_pattern, text_content)
+    inputs = [re.findall(input_pattern, line) for line in input_lines]
 
-def parse_examples(input_lists: list[list[tuple[str, str]]], output_lists: list[str]) -> list[dict]:
-    # Handle inputs
-    examples_list = []
-    for input_list, output in zip(input_lists, output_lists):
-        examples_list.append({'inputs': {}})
-        for name, val in input_list: examples_list[-1]['inputs'][name] = eval(val)
-        examples_list[-1]['output'] = eval(output)
-    return examples_list
+    output_pattern = r"Output: (.*?)(?=\n|$)"
+    outputs = re.findall(output_pattern, text_content)
 
-examples_list = parse_examples(inputs, outputs)
+    explanation_pattern = r"Explanation: (.*?)(?=\n|$)"
+    explanation = re.findall(explanation_pattern, text_content)
 
-# Extract tags (NOT IMPLEMENTED YET)
-tags = []
-for tag_dict in data['topicTags']:
-    tags.append(tag_dict['slug'])
+    def parse_examples(input_lists: list[list[tuple[str, str]]], output_lists: list[str]) -> list[dict]:
+        # Handle inputs
+        examples_list = []
+        for input_list, output in zip(input_lists, output_lists):
+            examples_list.append({'inputs': {}})
+            for name, val in input_list: examples_list[-1]['inputs'][name] = eval(val)
+            examples_list[-1]['output'] = eval(output)
+        return examples_list
 
-# Get the filename
-question_number = data['questionFrontendId']
-question_title_slug = data['titleSlug']
-output_filename = f'#{question_number}-{question_title_slug}.py'
+    examples_list = parse_examples(inputs, outputs)
 
-# Populate the template
-with open(join_url(templates_folderpath, python_template_filename), 'r') as file:
-    template_string = file.read()
+    # Extract tags (NOT IMPLEMENTED YET)
+    tags = []
+    for tag_dict in data['topicTags']:
+        tags.append(tag_dict['slug'])
 
-template = Template(template_string)
-populated_file = template.render(
-    link = base_leetcode_url + question_title_slug + '/',
-    title = data['title'],
-    description = initial_description,
-    constraints = constraints_onwards,
-    code_snippet=python_code_snippet,
-    function_name=function_name,
-    examples_list=examples_list,
-)
+    # Get the filename
+    question_number = data['questionFrontendId']
+    question_title_slug = data['titleSlug']
+    output_filename = f'#{question_number}-{question_title_slug}.py'
 
-# Save file
-with open(join_url(output_folder, output_filename), 'w') as file:
-    file.write(populated_file)
+    # Populate the template
+    with open(join_url(templates_folderpath, python_template_filename), 'r') as file:
+        template_string = file.read()
 
+    template = Template(template_string)
+    populated_file = template.render(
+        link = base_leetcode_url + question_title_slug + '/',
+        title = data['title'],
+        description = initial_description,
+        constraints = constraints_onwards,
+        code_snippet = code_snippet,
+        function_name = function_name,
+        examples_list = examples_list,
+    )
+
+    # Save file
+    with open(join_url(output_folder, output_filename), 'w') as file:
+        file.write(populated_file)
+        pprint('Wrote correctly!')
+
+generate_template_from_leetcode_data(data)
 
 def write_pretty_json(r: dict) -> str:
     prettified_data = json.dumps(r, indent=4)
