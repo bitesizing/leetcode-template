@@ -67,6 +67,22 @@ languages = {
 def generate_template_from_leetcode_data(data: dict, language: str = 'python3') -> str:
 
     def get_code_snippet_data(data: dict, language: str) -> tuple[str, str]:
+        """
+        Get code snippet and function name from leetcode data for a given language.
+
+        Args:
+            data (dict): Leetcode data for a specific problem parsed from GraphQL. 
+                - Must contain 'codeSnippets' (list[dict]), with each dict containing 'langSlug' key.
+            language (str): Language for which code snippet needs to be obtained. Must be a key in the languages dictionary.
+
+        Returns:
+            A tuple containing two values:
+                - code_snippet: A string containing the code snippet for the given language, or an empty string if no matching snippet was found.
+                - function_name: A string containing the name of the function in the code snippet, or an empty string if no matching function was found.
+
+        Raises:
+            ValueError: If the language is not found in the languages dictionary or if there is no code snippet for the given language.
+        """
         # Get code snippet by querying list of dictionaries for key value pair
         code_snippet: str = query_list_of_dicts(data['codeSnippets'], key='langSlug', value=language).get('code')
         if code_snippet is None: raise ValueError(f'Could not get code snippet for language "{language}."')
