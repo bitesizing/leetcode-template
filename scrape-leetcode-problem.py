@@ -96,7 +96,35 @@ def generate_template_from_leetcode_data(data: dict, language: str = 'python3') 
         return code_snippet, function_name
 
     def process_description_text(data: dict) -> tuple[str, str, list[dict]]:
+        """
+        Process the description text to extract the introduction, constraints, inputs, outputs, and explanations.
+
+        Args:
+            data (dict): The data dictionary containing the description content.
+
+        Returns:
+            tuple[str, str, list[dict]]: A tuple containing the following:
+                - introduction_text (str): The introduction text.
+                - constraints_text (str): The constraints text.
+                - examples_list (list[dict]): A list of dictionaries containing the input-output examples.
+                    Each dictionary contains the following keys:
+                        - inputs (dict): A dictionary of input values.
+                        - output (str): The expected output value.
+
+        """
         def generate_examples_list(input_lists: list[list[tuple[str, str]]], output_lists: list[str]) -> list[dict]:
+            """
+            Generates a list of dictionaries containing examples for a given problem.
+
+            Args:
+                input_lists (list[list[tuple[str, str]]]): A list of lists of tuples, where each tuple
+                    contains the name of an input and its value.
+                output_lists (list[str]): A list of strings, where each string is the expected output
+                    value for the corresponding input list.
+            Returns:
+                list[dict]: A list of dictionaries, where each dictionary contains an 'inputs' key
+                    with a dictionary of input values, and an 'output' key with the expected output value.
+            """
             # Handle inputs
             examples_list = []
             for input_list, output in zip(input_lists, output_lists):
