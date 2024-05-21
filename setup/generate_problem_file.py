@@ -88,6 +88,7 @@ def generate_problem_file_from_leetcode_data(data: dict, language: str = 'python
             return examples_list
         
         # Get description content by parsing html within data dict, then filter out non-breaking spaces.
+        if not data['content']: raise ValueError("Question content not found (check if Premium question)")
         full_desc_text = re.sub(r'\xa0', ' ', bs(data['content'], 'html.parser').get_text())
 
         # Get the introduction and constraints.
