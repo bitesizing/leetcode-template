@@ -9,8 +9,8 @@ from leetcode_template.helpers import *
 {{ title }}
 
 Description:
-{{ description }}
-{{ constraints }}
+{{ introduction_text }}
+{{ constraints_text }}
 """
 
 # Code

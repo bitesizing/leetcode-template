@@ -33,3 +33,9 @@ def query_list_of_dicts(list_of_dicts: list[dict], key: str, value) -> dict:
 
     for d in list_of_dicts:
         if d.get(key) == value: return d
+
+def write_pretty_json(r: dict) -> str:
+    prettified_data = json.dumps(r, indent=4)
+    # Write the prettified data to a file
+    with open('output.json', 'w') as file:
+        file.write(prettified_data)
