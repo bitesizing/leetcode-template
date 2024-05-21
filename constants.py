@@ -1,7 +1,10 @@
+import os
 import toml
 
+from os.path import join as join_path
+
 # Initialise variables, including reading from config
-with open('config.toml', 'r') as file:
+with open(join_path(os.getcwd(),'config.toml'), 'r') as file:
     configs = toml.loads(file.read())
 question_link: str = configs['question_link']
 output_folder: str = configs['output_folder']
