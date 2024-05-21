@@ -1,58 +1,13 @@
-""" File to scrape a leetcode problem from a link and populate a template, with a given set of formatting rules. """
-
-# %%
-import os
 import re
 import json
-import toml
 
 from pprint import pprint
 from jinja2 import Template
 from bs4 import BeautifulSoup as bs
 from os.path import join as join_url
 
-from helpers import extract_question_title, make_post_request_from_query, query_list_of_dicts
-
-# Set current working directory to directory of the script... (helps with running from parent directory)
-if __name__ == "__main__":
-    script_dir = os.path.dirname(os.path.realpath(__file__))
-    os.chdir(script_dir)
-
-# Initialise variables, including reading from config
-with open('config.toml', 'r') as file:
-    configs = toml.loads(file.read())
-question_link: str = configs['question_link']
-output_folder: str = configs['output_folder']
-is_daily: bool = (question_link.strip() == "")  # get daily if q. link is empty
-
-# Filepath variables
-base_leetcode_url: str = "https://leetcode.com/problems/"
-graphql_url: str = "https://leetcode.com/graphql"
-templates_folderpath: str = "templates"
-daily_query_filename: str = "daily-question.graphql"
-problem_query_filename: str = "problem-data.graphql"
-python_template_filename: str = "python_template.txt"
-
-
-""" CODE. """
-# 1. Make post request for data
-
-# If daily question, we need to get the title_slug via an additional post request
-if is_daily:
-    daily_query_filepath = join_url(templates_folderpath, daily_query_filename)
-    r = make_post_request_from_query(graphql_url, daily_query_filepath)
-    title_slug = r['data']['activeDailyCodingChallengeQuestion']['question']['titleSlug']
-
-# Otherwise we can extract the slug directly from the provided url
-else: 
-    title_slug = extract_question_title(base_leetcode_url, question_link)
-
-# Now we make the post request for the question with our chosen slug
-json_variables = {'titleSlug': title_slug}
-query_filepath = join_url(templates_folderpath, problem_query_filename)
-r = make_post_request_from_query(graphql_url, query_filepath, json_variables)
-data = r['data']['question']
-
+from helpers import query_list_of_dicts
+import constants as c
 
 # TODO: turn this into custom class instead of dict**2. Import properly from helpers
 # I can pull some custom classes in from my project code to help with this.
@@ -63,8 +18,7 @@ languages = {
     }
 }
 
-# 2. Extract code
-def generate_template_from_leetcode_data(data: dict, language: str = 'python3') -> str:
+def generate_problem_file_from_leetcode_data(data: dict, language: str = 'python3') -> str:
 
     def get_code_snippet_data(data: dict, language: str) -> tuple[str, str]:
         """
@@ -174,11 +128,11 @@ def generate_template_from_leetcode_data(data: dict, language: str = 'python3') 
     output_filename = f'#{question_number}-{question_title_slug}.py'
 
     # Populate the template
-    with open(join_url(templates_folderpath, python_template_filename), 'r') as file:
+    with open(join_url(c.templates_folderpath, c.python_template_filename), 'r') as file:
         template = Template(file.read())
     
     populated_file = template.render(
-        link = base_leetcode_url + question_title_slug + '/',
+        link = c.base_leetcode_url + question_title_slug + '/',
         title = data['title'],
         description = introduction_text,
         constraints = constraints_text,
@@ -188,15 +142,6 @@ def generate_template_from_leetcode_data(data: dict, language: str = 'python3') 
     )
 
     # Save file
-    with open(join_url(output_folder, output_filename), 'w') as file:
+    with open(join_url(c.output_folder, output_filename), 'w') as file:
         file.write(populated_file)
         pprint('Wrote correctly!')
-
-generate_template_from_leetcode_data(data)
-
-def write_pretty_json(r: dict) -> str:
-    prettified_data = json.dumps(r, indent=4)
-    # Write the prettified data to a file
-    with open('output.json', 'w') as file:
-        file.write(prettified_data)
-
