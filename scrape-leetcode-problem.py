@@ -5,53 +5,56 @@ import os
 import re
 import json
 import toml
-import requests
+
 from pprint import pprint
 from jinja2 import Template
 from bs4 import BeautifulSoup as bs
+from os.path import join as join_url
 
-# Import configs from .toml file as dictionary
+from helpers import extract_question_title, make_post_request_from_query, query_list_of_dicts
+
+# Set current working directory to directory of the script... (helps with running from parent directory)
+if __name__ == "__main__":
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    os.chdir(script_dir)
+
+# Initialise variables, including reading from config
 with open('config.toml', 'r') as file:
     configs = toml.loads(file.read())
-question_link, output_folder, templates_folder = configs['question_link'], configs['output_folder'], configs['templates_folder']
+question_link: str = configs['question_link']
+output_folder: str = configs['output_folder']
+is_daily: bool = (question_link.strip() == "")  # get daily if q. link is empty
+
+# Filepath variables
+base_leetcode_url: str = "https://leetcode.com/problems/"
+graphql_url: str = "https://leetcode.com/graphql"
+templates_folderpath: str = "templates"
+daily_query_filename: str = "daily-question.graphql"
+problem_query_filename: str = "problem-data.graphql"
+python_template_filename: str = "python_template.txt"
 
 
 """ CODE. """
-# 1. Extract link
-def extract_question_title(link: str) -> str:
-    re_search = 'https://leetcode\\.com/problems/(.*?)/.*'
-    match = re.search(re_search, link)
-    if not match: raise ValueError('No match:(')
-    return match.group(1)
-question_title = extract_question_title(question_link)
+# 1. Make post request for data
 
+# If daily question, we need to get the title_slug via an additional post request
+if is_daily:
+    daily_query_filepath = join_url(templates_folderpath, daily_query_filename)
+    r = make_post_request_from_query(graphql_url, daily_query_filepath)
+    title_slug = r['data']['activeDailyCodingChallengeQuestion']['question']['titleSlug']
 
-# 2. Write the request:)
-# Get the .json query by importing - template for request
-with open(templates_folder + '/query.json', 'r') as file:
-    json_request = json.load(file)
+# Otherwise we can extract the slug directly from the provided url
+else: 
+    title_slug = extract_question_title(base_leetcode_url, question_link)
 
-# Get the graphql query - i.e., what information are we going to request
-with open(templates_folder + '/problem-data.graphql', 'r') as file:
-    graphql_query  = file.read()
+# Now we make the post request for the question with our chosen slug
+json_variables = {'titleSlug': title_slug}
+query_filepath = join_url(templates_folderpath, problem_query_filename)
+r = make_post_request_from_query(graphql_url, query_filepath, json_variables)
+data = r['data']['question']
 
-# Populate the .json query
-json_request['query'] = graphql_query
-json_request['variables']['titleSlug'] = question_title
-
-
-# 3. Make the request
-r = requests.post('https://leetcode.com/graphql', json = json_request).json()['data']['question']
-
-# 4. Extract data
-
-# Get the code snippet 
-def query_list_of_dicts(list_of_dicts: list[dict], key: str, value) -> dict:
-    """ Returns the dictionary matching a key value pair in a given list of dictionaries. Returns empty dictionary if no match found. """
-    for d in list_of_dicts:
-        if d.get(key) == value: return d
-
-code_snippets = r['codeSnippets']
+# 2. Extract code
+code_snippets = data['codeSnippets']
 python_snippet = query_list_of_dicts(code_snippets, 'langSlug', 'python3')
 if python_snippet.get('code') is None: raise ValueError('No match:(')
 python_code_snippet: str = python_snippet.get('code')
@@ -60,11 +63,10 @@ python_code_snippet: str = python_snippet.get('code')
 function_line = python_code_snippet.splitlines()[-2]
 function_name = re.search('.*def (.*)\\(', function_line).group(1)
 
-
 # Get the description in just text
-description = r['content']
+description = data['content']
 soup = bs(description, 'html.parser')
-text_content = soup.get_text()
+text_content = re.sub(r'\xa0', ' ', soup.get_text())  # remove non-breaking spaces, get text content
 
 # Filter out the examples from the text
 description_pattern = r"^(.*?)Example"
@@ -98,25 +100,25 @@ def parse_examples(input_lists: list[list[tuple[str, str]]], output_lists: list[
     return examples_list
 
 examples_list = parse_examples(inputs, outputs)
-    
 
 # Extract tags (NOT IMPLEMENTED YET)
 tags = []
-for tag_dict in r['topicTags']:
+for tag_dict in data['topicTags']:
     tags.append(tag_dict['slug'])
 
 # Get the filename
-question_number = r['questionFrontendId']
-question_title_slug = r['titleSlug']
-filename = f'#{question_number}-{question_title_slug}.py'
+question_number = data['questionFrontendId']
+question_title_slug = data['titleSlug']
+output_filename = f'#{question_number}-{question_title_slug}.py'
 
 # Populate the template
-with open(templates_folder + '/template.txt', 'r') as file:
+with open(join_url(templates_folderpath, python_template_filename), 'r') as file:
     template_string = file.read()
 
 template = Template(template_string)
 populated_file = template.render(
-    title = r['title'],
+    link = base_leetcode_url + question_title_slug + '/',
+    title = data['title'],
     description = initial_description,
     constraints = constraints_onwards,
     code_snippet=python_code_snippet,
@@ -125,8 +127,7 @@ populated_file = template.render(
 )
 
 # Save file
-filepath = output_folder + '/' + filename if output_folder else filename
-with open(filepath, 'w') as file:
+with open(join_url(output_folder, output_filename), 'w') as file:
     file.write(populated_file)
 
 

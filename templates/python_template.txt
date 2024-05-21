@@ -1,11 +1,12 @@
 # %%
-from typing import Optional, Union, get_args, get_origin
+from typing import Optional, Union, get_args, get_origin, List
 from collections import deque, defaultdict
 from itertools import count
 from heapq import heappush, heappop, heapify, heappushpop
-from helpers import *
+from leetcode_template.helpers import *
 
-""" {{ title }}
+""" {{ link }}
+{{ title }}
 
 Description:
 {{ description }}
@@ -22,4 +23,4 @@ Description:
 examples_list = {{ examples_list }}
 run_tests(
     examples_list = examples_list,
-    function = Solution().{{ function_name }})
+    func_in = Solution().{{ function_name }})

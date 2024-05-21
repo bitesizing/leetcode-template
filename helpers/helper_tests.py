@@ -18,3 +18,16 @@ def run_tests(examples_list: list[dict], func_in):
 
         print(f"Example {i + 1}:")
         print(f"  inputs = {example['inputs']}\n  answer = {ans}\n  true answer = {example['output']}\n  correct = {ans == example['output']}\n")
+
+def add_example(examples_list: list[dict], *args):
+    """ Modifies examples_list inplace. """
+    
+    # Read inputs 
+    input_names = examples_list[0]['inputs'].keys()
+    input_vals, output_val = args[:-1], args[-1]
+
+    # Populate the dictionary by modifying inplace
+    examples_list.append({
+        'inputs': {input_name: input_val for input_name, input_val in zip(input_names, input_vals)},
+        'output': output_val
+    })
