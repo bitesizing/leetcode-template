@@ -8,4 +8,3 @@ from setup import generate_problem_file_from_leetcode_data, get_problem_data_fro
 # Generate file
 data = get_problem_data_from_title_slug(get_problem_title_slug())
 generate_problem_file_from_leetcode_data(data)
-

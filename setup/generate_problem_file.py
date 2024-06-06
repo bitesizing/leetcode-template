@@ -80,11 +80,23 @@ def generate_problem_file_from_leetcode_data(data: dict, language: str = 'python
                     with a dictionary of input values, and an 'output' key with the expected output value.
             """
             # Handle inputs
+            # Some inputs don't evaluate properly, so you have to map them. Can update as needed.
+
+            eval_map = {
+                'true': 'True',
+                'false': 'False'
+            }
+
+            def replace_eval(eval_string: str):
+                for key, value in eval_map.items():
+                    eval_string = eval_string.replace(key, value)
+                return eval(eval_string)
+
             examples_list = []
             for input_list, output in zip(input_lists, output_lists):
                 examples_list.append({'inputs': {}})
-                for name, val in input_list: examples_list[-1]['inputs'][name] = eval(val)
-                examples_list[-1]['output'] = eval(output)
+                for name, val in input_list: examples_list[-1]['inputs'][name] = replace_eval(val)
+                examples_list[-1]['output'] = replace_eval(output)
             return examples_list
         
         # Get description content by parsing html within data dict, then filter out non-breaking spaces.
