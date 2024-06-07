@@ -104,25 +104,33 @@ def generate_problem_file_from_leetcode_data(data: dict, language: str = 'python
         full_desc_text = re.sub(r'\xa0', ' ', bs(data['content'], 'html.parser').get_text())
 
         # Get the introduction and constraints.
-        introduction_text = re.search(r"^(.*?)Example", full_desc_text, re.DOTALL).group(1)
-        introduction_text = re.sub(r'^\s*\n', '', introduction_text, flags=re.MULTILINE)
-
+        introduction_text = re.search(r"^(.*?)Example", full_desc_text, re.DOTALL).group(1).strip()
         constraints_text = re.search(r"(Constraints:.*)", full_desc_text, re.DOTALL).group(1)
-        constraints_text = re.sub(r'\n(\S+)', r'\n- \1', constraints_text)
-        constraints_text = re.sub(r'^\s*\n', '', constraints_text, flags=re.MULTILINE)
+        constraints_text = re.sub(r'\n(\S+)', r'\n- \1', constraints_text).strip()
 
-        # Get the inputs, outputs and explanations
-        input_line_pattern = r".*Input:.*"
-        input_pattern = r"(\w+) = ((?:.*?)(?=\n|, \w+ =|$))"
-        input_lines = re.findall(input_line_pattern, full_desc_text)
-        inputs = [re.findall(input_pattern, line) for line in input_lines]
+        # Split data into each Example
+        # '\d+' matches to one or more (+) digits (\d)
+        # (.*?) matches every character (.*) non-greedily (?), meaning shortest n_ characters until...
+        # \n\n ends the pattern with a double new line, which I think is always present. 
+        examples_pattern = re.compile(r'Example \d+:\n(.*?)\n\n', re.DOTALL)  # compile pattern, DOTALL means dots cover newlines
+        examples = examples_pattern.findall(full_desc_text)  # give us each match, split into a list
 
-        output_pattern = r"Output: (.*?)(?=\n|$)"
-        outputs = re.findall(output_pattern, full_desc_text)
-        examples_list = generate_examples_list(inputs, outputs)
+        formatted_examples = []
+        for example in examples:
+            input_line = re.compile(r'^Input:\s*(.*)', re.MULTILINE).findall(example)[0]
+            output_line = re.compile(r'^Output:\s*(.*)', re.MULTILINE).findall(example)[0]
+            expl_line = re.compile(r'^Explanation:\s*(.*)', re.MULTILINE).findall(example)
 
-        explanation_pattern = r"Explanation: (.*?)(?=\n|$)"
-        explanation = re.findall(explanation_pattern, full_desc_text)
+            single_pattern = r"(.*?)(?=\n|$)"  # allows one output after an equals
+            multi_pattern = r"(\w+) = ((?:.*?)(?=\n|, \w+ =|$))"  # allows multiple inputs separated by commas
+
+            # Sort into list of inputs, outputs, explanations
+            formatted_examples.append([
+                re.findall(multi_pattern, input_line),
+                re.findall(single_pattern, output_line),
+                re.findall(single_pattern, expl_line) if len(expl_line) > 0 else []
+            ])
+        examples_list = generate_examples_list(formatted_examples)
 
         return {'introduction_text': introduction_text, 'constraints_text': constraints_text, 'examples_list': examples_list}
 
