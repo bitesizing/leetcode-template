@@ -1,4 +1,5 @@
 """ File to run a standard set of tests. """
+import textwrap
 from typing import Optional, Union, get_args, get_origin
 from . import TreeNode, to_tree
 
@@ -17,7 +18,11 @@ def run_tests(examples_list: list[dict], func_in):
         ans = func_in(**example['inputs'])
 
         print(f"Example {i + 1}:")
-        print(f"  inputs = {example['inputs']}\n  answer = {ans}\n  true answer = {example['output']}\n  correct = {ans == example['output']}\n")
+        print(f"  inputs = {example['inputs']}")
+        print(f"  answer = {ans}")
+        print(f"  true answer = {example['output']}")
+        if example.get('explanation') is not None: print(f"  explanation = {example['explanation']}")
+        print(f"  correct = {ans == example['output']}\n")
 
 def add_example(examples_list: list[dict], *args):
     """ Modifies examples_list inplace. """

@@ -98,7 +98,7 @@ def generate_problem_file_from_leetcode_data(data: dict, language: str = 'python
                 example_dict = {'inputs': {}}
                 for name, val in input_list: example_dict['inputs'][name] = replace_eval(val)
                 example_dict['output'] = replace_eval(output)
-                example_dict['explanation'] = explanation[0] if len(explanation) > 0 else ""
+                if len(explanation) > 0: example_dict['explanation'] = explanation[0]
                 examples_list.append(example_dict)
             return examples_list
         
@@ -113,9 +113,10 @@ def generate_problem_file_from_leetcode_data(data: dict, language: str = 'python
 
         # Split data into each Example
         # '\d+' matches to one or more (+) digits (\d)
-        # (.*?) matches every character (.*) non-greedily (?), meaning shortest n_ characters until...
-        # \n\n ends the pattern with a double new line, which I think is always present. 
-        examples_pattern = re.compile(r'Example \d+:\n(.*?)\n\n', re.DOTALL)  # compile pattern, DOTALL means dots cover newlines
+        # '(.*?)' matches every character (.*) non-greedily (?), meaning shortest n_ characters until...
+        # '?=Example \d+:' is a 'positive' lookahead (meaning it checks for chars without parsing them) for the next example
+        # '|\Z' also matches the enx of the string
+        examples_pattern = re.compile(r'Example \d+:(.*?)(?=Example \d+:|\Z)', re.DOTALL)  # compile pattern, DOTALL means dots cover newlines
         examples = examples_pattern.findall(full_desc_text)  # give us each match, split into a list
 
         formatted_examples = []
