@@ -66,22 +66,23 @@ def generate_problem_file_from_leetcode_data(data: dict, language: str = 'python
                         - output (str): The expected output value.
 
         """
-        def generate_examples_list(input_lists: list[list[tuple[str, str]]], output_lists: list[str]) -> list[dict]:
+        def generate_examples_list(examples: list[list]) -> list[dict]:
             """
             Generates a list of dictionaries containing examples for a given problem.
 
             Args:
-                input_lists (list[list[tuple[str, str]]]): A list of lists of tuples, where each tuple
-                    contains the name of an input and its value.
-                output_lists (list[str]): A list of strings, where each string is the expected output
-                    value for the corresponding input list.
+                examples (list[list]): A list of lists, where each list contains three elements:
+                    - input_list (list[tuple]): A list of tuples, where each tuple contains two elements:
+                        - name (str): The name of the input.
+                        - val (str): The value of the input.
+                    - output (str): The expected output value.
+                    - explanation (str): An optional explanation for the example.
             Returns:
                 list[dict]: A list of dictionaries, where each dictionary contains an 'inputs' key
                     with a dictionary of input values, and an 'output' key with the expected output value.
             """
             # Handle inputs
             # Some inputs don't evaluate properly, so you have to map them. Can update as needed.
-
             eval_map = {
                 'true': 'True',
                 'false': 'False'
@@ -91,12 +92,14 @@ def generate_problem_file_from_leetcode_data(data: dict, language: str = 'python
                 for key, value in eval_map.items():
                     eval_string = eval_string.replace(key, value)
                 return eval(eval_string)
-
+            
             examples_list = []
-            for input_list, output in zip(input_lists, output_lists):
-                examples_list.append({'inputs': {}})
-                for name, val in input_list: examples_list[-1]['inputs'][name] = replace_eval(val)
-                examples_list[-1]['output'] = replace_eval(output)
+            for input_list, output, explanation in examples:
+                example_dict = {'inputs': {}}
+                for name, val in input_list: example_dict['inputs'][name] = replace_eval(val)
+                example_dict['output'] = replace_eval(output)
+                example_dict['explanation'] = explanation[0] if len(explanation) > 0 else ""
+                examples_list.append(example_dict)
             return examples_list
         
         # Get description content by parsing html within data dict, then filter out non-breaking spaces.
@@ -121,17 +124,14 @@ def generate_problem_file_from_leetcode_data(data: dict, language: str = 'python
             output_line = re.compile(r'^Output:\s*(.*)', re.MULTILINE).findall(example)[0]
             expl_line = re.compile(r'^Explanation:\s*(.*)', re.MULTILINE).findall(example)
 
-            single_pattern = r"(.*?)(?=\n|$)"  # allows one output after an equals
-            multi_pattern = r"(\w+) = ((?:.*?)(?=\n|, \w+ =|$))"  # allows multiple inputs separated by commas
-
             # Sort into list of inputs, outputs, explanations
+            input_pattern = r"(\w+) = ((?:.*?)(?=\n|, \w+ =|$))"
             formatted_examples.append([
-                re.findall(multi_pattern, input_line),
-                re.findall(single_pattern, output_line),
-                re.findall(single_pattern, expl_line) if len(expl_line) > 0 else []
+                re.findall(input_pattern, input_line),
+                output_line,
+                expl_line
             ])
         examples_list = generate_examples_list(formatted_examples)
-
         return {'introduction_text': introduction_text, 'constraints_text': constraints_text, 'examples_list': examples_list}
 
     # Get the filename
