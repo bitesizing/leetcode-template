@@ -66,22 +66,23 @@ def generate_problem_file_from_leetcode_data(data: dict, language: str = 'python
                         - output (str): The expected output value.
 
         """
-        def generate_examples_list(input_lists: list[list[tuple[str, str]]], output_lists: list[str]) -> list[dict]:
+        def generate_examples_list(examples: list[list]) -> list[dict]:
             """
             Generates a list of dictionaries containing examples for a given problem.
 
             Args:
-                input_lists (list[list[tuple[str, str]]]): A list of lists of tuples, where each tuple
-                    contains the name of an input and its value.
-                output_lists (list[str]): A list of strings, where each string is the expected output
-                    value for the corresponding input list.
+                examples (list[list]): A list of lists, where each list contains three elements:
+                    - input_list (list[tuple]): A list of tuples, where each tuple contains two elements:
+                        - name (str): The name of the input.
+                        - val (str): The value of the input.
+                    - output (str): The expected output value.
+                    - explanation (str): An optional explanation for the example.
             Returns:
                 list[dict]: A list of dictionaries, where each dictionary contains an 'inputs' key
                     with a dictionary of input values, and an 'output' key with the expected output value.
             """
             # Handle inputs
             # Some inputs don't evaluate properly, so you have to map them. Can update as needed.
-
             eval_map = {
                 'true': 'True',
                 'false': 'False'
@@ -91,12 +92,14 @@ def generate_problem_file_from_leetcode_data(data: dict, language: str = 'python
                 for key, value in eval_map.items():
                     eval_string = eval_string.replace(key, value)
                 return eval(eval_string)
-
+            
             examples_list = []
-            for input_list, output in zip(input_lists, output_lists):
-                examples_list.append({'inputs': {}})
-                for name, val in input_list: examples_list[-1]['inputs'][name] = replace_eval(val)
-                examples_list[-1]['output'] = replace_eval(output)
+            for input_list, output, explanation in examples:
+                example_dict = {'inputs': {}}
+                for name, val in input_list: example_dict['inputs'][name] = replace_eval(val)
+                example_dict['output'] = replace_eval(output)
+                if len(explanation) > 0: example_dict['explanation'] = explanation[0]
+                examples_list.append(example_dict)
             return examples_list
         
         # Get description content by parsing html within data dict, then filter out non-breaking spaces.
@@ -104,26 +107,32 @@ def generate_problem_file_from_leetcode_data(data: dict, language: str = 'python
         full_desc_text = re.sub(r'\xa0', ' ', bs(data['content'], 'html.parser').get_text())
 
         # Get the introduction and constraints.
-        introduction_text = re.search(r"^(.*?)Example", full_desc_text, re.DOTALL).group(1)
-        introduction_text = re.sub(r'^\s*\n', '', introduction_text, flags=re.MULTILINE)
-
+        introduction_text = re.search(r"^(.*?)Example", full_desc_text, re.DOTALL).group(1).strip()
         constraints_text = re.search(r"(Constraints:.*)", full_desc_text, re.DOTALL).group(1)
-        constraints_text = re.sub(r'\n(\S+)', r'\n- \1', constraints_text)
-        constraints_text = re.sub(r'^\s*\n', '', constraints_text, flags=re.MULTILINE)
+        constraints_text = re.sub(r'\n(\S+)', r'\n- \1', constraints_text).strip()
 
-        # Get the inputs, outputs and explanations
-        input_line_pattern = r".*Input:.*"
-        input_pattern = r"(\w+) = ((?:.*?)(?=\n|, \w+ =|$))"
-        input_lines = re.findall(input_line_pattern, full_desc_text)
-        inputs = [re.findall(input_pattern, line) for line in input_lines]
+        # Split data into each Example
+        # '\d+' matches to one or more (+) digits (\d)
+        # '(.*?)' matches every character (.*) non-greedily (?), meaning shortest n_ characters until...
+        # '?=Example \d+:' is a 'positive' lookahead (meaning it checks for chars without parsing them) for the next example
+        # '|\Z' also matches the enx of the string
+        examples_pattern = re.compile(r'Example \d+:(.*?)(?=Example \d+:|\Z)', re.DOTALL)  # compile pattern, DOTALL means dots cover newlines
+        examples = examples_pattern.findall(full_desc_text)  # give us each match, split into a list
 
-        output_pattern = r"Output: (.*?)(?=\n|$)"
-        outputs = re.findall(output_pattern, full_desc_text)
-        examples_list = generate_examples_list(inputs, outputs)
+        formatted_examples = []
+        for example in examples:
+            input_line = re.compile(r'^Input:\s*(.*)', re.MULTILINE).findall(example)[0]
+            output_line = re.compile(r'^Output:\s*(.*)', re.MULTILINE).findall(example)[0]
+            expl_line = re.compile(r'^Explanation:\s*(.*)', re.MULTILINE).findall(example)
 
-        explanation_pattern = r"Explanation: (.*?)(?=\n|$)"
-        explanation = re.findall(explanation_pattern, full_desc_text)
-
+            # Sort into list of inputs, outputs, explanations
+            input_pattern = r"(\w+) = ((?:.*?)(?=\n|, \w+ =|$))"
+            formatted_examples.append([
+                re.findall(input_pattern, input_line),
+                output_line,
+                expl_line
+            ])
+        examples_list = generate_examples_list(formatted_examples)
         return {'introduction_text': introduction_text, 'constraints_text': constraints_text, 'examples_list': examples_list}
 
     # Get the filename
