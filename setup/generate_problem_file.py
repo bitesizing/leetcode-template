@@ -146,7 +146,8 @@ def generate_problem_file_from_leetcode_data(data: dict, language: str = 'python
     template_variables = {
         'link': c.base_leetcode_url + question_title_slug + '/',
         'title': data['title'],
-        'tags': tags
+        'difficulty': data['difficulty'],
+        'tags': tags,
     }
     template_variables.update(process_description_text(data))
     template_variables.update(get_code_snippet_data(data, language))

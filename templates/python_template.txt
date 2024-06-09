@@ -12,6 +12,7 @@ Description:
 {{ introduction_text }}
 {{ constraints_text }}
 
+Difficulty: {{ difficulty }}
 Tags: {{ tags }}
 """
 
