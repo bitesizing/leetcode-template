@@ -139,10 +139,14 @@ def generate_problem_file_from_leetcode_data(data: dict, language: str = 'python
     question_title_slug = data['titleSlug']
     output_filename = f"#{data['questionFrontendId']}-{question_title_slug}.py"
 
+    # Handle tags (not in function bc very easy)
+    tags = ', '.join(f"#{d['slug']}" for d in data['topicTags'])
+
     # Generate variables to populate template with
     template_variables = {
         'link': c.base_leetcode_url + question_title_slug + '/',
         'title': data['title'],
+        'tags': tags
     }
     template_variables.update(process_description_text(data))
     template_variables.update(get_code_snippet_data(data, language))

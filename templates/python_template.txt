@@ -11,6 +11,8 @@ from leetcode_template.helpers import *
 Description:
 {{ introduction_text }}
 {{ constraints_text }}
+
+Tags: {{ tags }}
 """
 
 # Code
