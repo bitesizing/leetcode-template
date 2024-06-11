@@ -11,10 +11,8 @@ from leetcode_template.helpers import *
 
 Description:
 {{ introduction_text }}
-{{ constraints_text }}
 
-Difficulty: {{ difficulty }}
-Tags: {{ tags }}
+{{ constraints_text }}
 """
 
 # Code
@@ -29,3 +27,31 @@ examples_list = {{ examples_list }}
 run_tests(
     examples_list = examples_list,
     func_in = Solution().{{ function_name }})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"""
+Difficulty: {{ difficulty }}
+Tags: {{ tags }}
+"""
