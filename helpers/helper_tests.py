@@ -6,10 +6,11 @@ from . import TreeNode, to_tree
 class Examples():
     def __init__(self, examples_list: list[dict], func_in: Callable):
         self.original_examples: list[dict] = examples_list
+        self.func_in: Callable = func_in
+        
         self.input_names = examples_list[0]['inputs'].keys()
         self.check_legal_types(self.original_examples)  # convert input types to legal
 
-        self.func_in: Callable = func_in
         self.added_examples = []
     
     @property
@@ -37,6 +38,7 @@ class Examples():
 
     def add_example(self, *args):
         """ Appends an example to the added_examples dictionary. Also converts types. """
+        if len(args) == 0: return
 
         added_example = [{
             'inputs': {input_name: input_val for input_name, input_val in zip(self.input_names, args[:-1])},

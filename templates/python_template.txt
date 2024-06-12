@@ -2,6 +2,7 @@
 from typing import *
 from collections import deque, defaultdict, Counter
 from itertools import count
+from functools import reduce
 from heapq import heappush, heappop, heapify, heappushpop
 
 from leetcode_template.helpers import *
@@ -22,11 +23,13 @@ Description:
 
 
 # Tests (ignore)
-examples_list = {{ examples_list }}
-# add_example(examples_list, )
-run_tests(
-    examples_list = examples_list,
-    func_in = Solution().{{ function_name }})
+e = Examples({{ examples_list }}, Solution().{{ function_name }})
+
+# Add own examples by putting all inputs in, and then output. No need for labels.
+e.add_example()
+
+# Run tests. Can set argument to True to only run added_examples!
+e.run_tests()
 
 
 
@@ -49,8 +52,7 @@ run_tests(
 
 
 
-
-
+# %%
 """
 Difficulty: {{ difficulty }}
 Tags: {{ tags }}
